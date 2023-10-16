@@ -2,22 +2,17 @@ import os
 import pickle
 import argparse
 import tqdm
-
+import warnings
 import numpy as np
 import pandas as pd
+from sklearn.linear_model import Ridge, RidgeCV, LogisticRegression, LogisticRegressionCV
+from sklearn.metrics import accuracy_score
 
-from utils import timestamp, MODEL_N_LAYERS, get_model_family
-from make_prompt_datasets import ENTITY_PROMPTS
-from save_activations import load_activation_probing_dataset, load_activation_probing_dataset_args
-from probes import baseline
-from probes import rank
+from utils import timestamp, MODEL_N_LAYERS
+from save_activations import load_activation_probing_dataset_args
 from probes.evaluation import *
 from feature_datasets import common
-from sklearn.linear_model import Ridge, RidgeCV
-from sklearn import metrics
-from scipy import stats
 
-import warnings
 warnings.filterwarnings(
     'ignore', category=UserWarning,
     message='TypedStorage is deprecated')
@@ -186,9 +181,44 @@ def time_probe_experiment(activations, target, is_test, probe=None):
     return probe, scores, projection_df
 
 
+def drug_probe_experiment(activations, target, is_test, probe=None):
+    train_activations = activations[~is_test]
+    train_target = target[~is_test]
+
+    test_activations = activations[is_test]
+    test_target = target[is_test]
+
+    if probe is None:
+        probe = LogisticRegression(max_iter=5000)
+
+    probe.fit(train_activations, train_target)
+
+    train_pred = probe.predict(train_activations)
+    test_pred = probe.predict(test_activations)
+
+    train_accuracy = accuracy_score(train_target, train_pred)
+    test_accuracy = accuracy_score(test_target, test_pred)
+    scores = {
+        ('train', 'accuracy'): train_accuracy,
+        ('test', 'accuracy'): test_accuracy,
+    }
+
+    projection = probe.predict(activations)
+    prediction_df = pd.DataFrame({
+        'projection': projection,
+        'is_test': is_test,
+    })
+
+    return probe, scores, prediction_df
+
+
 def get_target_values(entity_df, feature_name):
     if feature_name == 'coords':
         target = entity_df[['longitude', 'latitude']].values
+    
+    # encode drug conditions as integers
+    elif feature_name == 'condition':
+        target = entity_df['cat'].values
 
     elif feature_name.endswith('date') or feature_name.endswith('year'):
         if feature_name == 'death_year':
@@ -245,17 +275,24 @@ def main_probe_experiment(args):
         probe = RidgeCV(alphas=RIDGE_ALPHAS[args.model], store_cv_values=True)
 
         is_place = args.entity_type.endswith('place')
+        is_drug = args.entity_type.endswith('drug')
 
         if is_place:
             probe, scores, projection = place_probe_experiment(
                 activations, target, is_test, probe=probe)
-
+        elif is_drug:
+            probe, scores, projection = drug_probe_experiment(
+                activations, target, is_test, 
+                probe=LogisticRegressionCV(max_iter=5000))
         else:
             probe, scores, projection = time_probe_experiment(
                 activations, target, is_test, probe=probe)
 
         probe_direction = probe.coef_.T.astype(np.float16)
-        probe_alphas = probe.cv_values_.mean(axis=(0, 1) if is_place else 0)
+        try: 
+            probe_alphas = probe.cv_values_.mean(axis=(0, 1) if is_place else 0)
+        except:
+            probe_alphas = None
 
         results['scores'][layer] = scores
         results['projections'][layer] = projection
@@ -316,7 +353,6 @@ def pca_probe_experiment(args):
         if is_place:
             probe, scores, projection = place_probe_experiment(
                 pca_activations, target, is_test, probe=probe)
-
         else:
             probe, scores, projection = time_probe_experiment(
                 pca_activations, target, is_test, probe=probe)
