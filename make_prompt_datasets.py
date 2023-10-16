@@ -1,7 +1,9 @@
 import argparse
-from feature_datasets import time_art, common, space_us, space_world, headline, space_nyc, historical
 from transformers import AutoTokenizer
 from functools import partial
+
+from feature_datasets import time_art, common, space_us, space_world, headline, space_nyc, historical, drugs
+
 
 
 ENTITY_PROMPTS = {
@@ -14,6 +16,9 @@ ENTITY_PROMPTS = {
     'world_place': space_world.PLACE_PROMPTS,
     'us_place': space_us.US_PLACE_PROMPTS,
     'nyc_place': space_nyc.NYC_PLACE_PROMPTS,
+
+    # drug
+    'drug': drugs.DRUG_PROMPTS,
 }
 
 DATASET_FUNCTIONS = {
@@ -24,6 +29,8 @@ DATASET_FUNCTIONS = {
     'world_place': partial(space_world.make_world_prompt_dataset, entity_col='name'),
     'us_place': partial(common.make_prompt_dataset, entity_col='name'),
     'nyc_place': partial(space_nyc.make_nyc_prompt_dataset, entity_col='name'),
+
+    'drug': partial(common.make_prompt_dataset, entity_col='drugName'),
 }
 
 
