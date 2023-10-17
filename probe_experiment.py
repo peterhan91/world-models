@@ -6,7 +6,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge, RidgeCV, LogisticRegression, LogisticRegressionCV
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, roc_auc_score
 
 from utils import timestamp, MODEL_N_LAYERS
 from save_activations import load_activation_probing_dataset_args
@@ -195,16 +195,21 @@ def drug_probe_experiment(activations, target, is_test, probe=None):
 
     train_pred = probe.predict(train_activations)
     test_pred = probe.predict(test_activations)
+    test_prob = probe.predict_proba(test_activations)
 
     train_accuracy = accuracy_score(train_target, train_pred)
     test_accuracy = accuracy_score(test_target, test_pred)
+    test_roc_auc = roc_auc_score(test_target, test_prob, multi_class='ovr')
     scores = {
         ('train', 'accuracy'): train_accuracy,
         ('test', 'accuracy'): test_accuracy,
+        ('test', 'roc_auc'): test_roc_auc,
     }
+    print(scores)
 
-    projection = probe.predict(activations)
+    projection = probe.predict_proba(test_activations)
     prediction_df = pd.DataFrame({
+        'y_true': test_target,
         'projection': projection,
         'is_test': is_test,
     })
@@ -275,15 +280,16 @@ def main_probe_experiment(args):
         probe = RidgeCV(alphas=RIDGE_ALPHAS[args.model], store_cv_values=True)
 
         is_place = args.entity_type.endswith('place')
-        is_drug = args.entity_type.endswith('drug')
+        is_drug = True if args.entity_type == 'drug' else False
 
         if is_place:
             probe, scores, projection = place_probe_experiment(
                 activations, target, is_test, probe=probe)
         elif is_drug:
+            print('running drug probe!')
             probe, scores, projection = drug_probe_experiment(
                 activations, target, is_test, 
-                probe=LogisticRegressionCV(max_iter=5000))
+                probe=LogisticRegression(max_iter=10))
         else:
             probe, scores, projection = time_probe_experiment(
                 activations, target, is_test, probe=probe)
