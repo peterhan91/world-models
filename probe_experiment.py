@@ -18,7 +18,7 @@ warnings.filterwarnings(
     message='TypedStorage is deprecated')
 
 
-def save_probe_results(args, probe_results, prompt, pca=False):
+def save_probe_results(args, probe_results, prompt, pca=False, probes=None):
     save_path = os.path.join(
         os.getenv('RESULTS_DIR', 'results'),
         args.experiment_name,
@@ -42,6 +42,12 @@ def save_probe_results(args, probe_results, prompt, pca=False):
         probe_results,
         open(os.path.join(save_path, probe_name), 'wb')
     )
+
+    if probes is not None:
+        for n, prob in enumerate(probes):
+            filename = f'model_layer_{n}.sav'
+            pickle.dump(prob, 
+                        open(os.path.join(save_path, filename), 'wb'))
 
 
 def load_probe_results(
@@ -207,9 +213,8 @@ def drug_probe_experiment(activations, target, is_test, probe=None):
     }
     print(scores)
 
-    projection = probe.predict_proba(test_activations)
+    projection = probe.predict(activations)
     prediction_df = pd.DataFrame({
-        'y_true': test_target,
         'projection': projection,
         'is_test': is_test,
     })
@@ -266,6 +271,7 @@ def main_probe_experiment(args):
         'probe_biases': {},
         'probe_alphas': {},
     }
+    probes = []
     for layer in tqdm.tqdm(range(n_layers)):
         # load data
         activations = load_activation_probing_dataset_args(
@@ -299,6 +305,7 @@ def main_probe_experiment(args):
             probe_alphas = probe.cv_values_.mean(axis=(0, 1) if is_place else 0)
         except:
             probe_alphas = None
+        probes.append(probe)
 
         results['scores'][layer] = scores
         results['projections'][layer] = projection
@@ -306,7 +313,7 @@ def main_probe_experiment(args):
         results['probe_biases'][layer] = probe.intercept_
         results['probe_alphas'][layer] = probe_alphas
 
-    save_probe_results(args, results, args.prompt_name)
+    save_probe_results(args, results, args.prompt_name, probes=probes)
 
 
 def pca_probe_experiment(args):
