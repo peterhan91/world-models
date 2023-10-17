@@ -289,7 +289,7 @@ def main_probe_experiment(args):
             print('running drug probe!')
             probe, scores, projection = drug_probe_experiment(
                 activations, target, is_test, 
-                probe=LogisticRegression(max_iter=10))
+                probe=LogisticRegression(max_iter=1500))
         else:
             probe, scores, projection = time_probe_experiment(
                 activations, target, is_test, probe=probe)
