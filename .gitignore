@@ -2,3 +2,4 @@ data/
 feature_datasets/
 __pycache__/
 activation_datasets/
+drug_review.ipynb
