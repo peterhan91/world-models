@@ -5,7 +5,7 @@ import tqdm
 import warnings
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import Ridge, RidgeCV, LogisticRegression, LogisticRegressionCV
+from sklearn.linear_model import Ridge, RidgeCV, LogisticRegression
 from sklearn.metrics import accuracy_score, roc_auc_score
 
 from utils import timestamp, MODEL_N_LAYERS
@@ -195,7 +195,7 @@ def drug_probe_experiment(activations, target, is_test, probe=None):
     test_target = target[is_test]
 
     if probe is None:
-        probe = LogisticRegression(max_iter=5000)
+        probe = LogisticRegression()
 
     probe.fit(train_activations, train_target)
 
@@ -295,7 +295,7 @@ def main_probe_experiment(args):
             print('running drug probe!')
             probe, scores, projection = drug_probe_experiment(
                 activations, target, is_test, 
-                probe=LogisticRegression(max_iter=1500))
+                probe=LogisticRegression())
         else:
             probe, scores, projection = time_probe_experiment(
                 activations, target, is_test, probe=probe)
