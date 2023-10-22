@@ -24,10 +24,10 @@ df_pcc_test['is_test'] = True
 
 df_pcc_tr['No. C'] = df_pcc_tr['SMILES'].apply(count_carbon_atoms)
 df_pcc_test['No. C'] = df_pcc_test['SMILES'].apply(count_carbon_atoms)
-df_pcc_tr['No. N'] = df_pcc_tr['SMILES'].apply(lambda x: count_carbon_atoms(x, atom='N'))
-df_pcc_test['No. N'] = df_pcc_test['SMILES'].apply(lambda x: count_carbon_atoms(x, atom='N'))
-df_pcc_tr['No. O'] = df_pcc_tr['SMILES'].apply(lambda x: count_carbon_atoms(x, atom='O'))
-df_pcc_test['No. O'] = df_pcc_test['SMILES'].apply(lambda x: count_carbon_atoms(x, atom='O'))
+df_pcc_tr['No. N'] = df_pcc_tr['SMILES'].apply(lambda x: count_carbon_atoms(x, 'N'))
+df_pcc_test['No. N'] = df_pcc_test['SMILES'].apply(lambda x: count_carbon_atoms(x, 'N'))
+df_pcc_tr['No. O'] = df_pcc_tr['SMILES'].apply(lambda x: count_carbon_atoms(x, 'O'))
+df_pcc_test['No. O'] = df_pcc_test['SMILES'].apply(lambda x: count_carbon_atoms(x, 'O'))
 
 df_pcc_tr = df_pcc_tr.dropna()
 df_pcc_test = df_pcc_test.dropna()

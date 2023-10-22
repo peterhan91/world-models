@@ -2,7 +2,7 @@ import argparse
 from transformers import AutoTokenizer
 from functools import partial
 
-from feature_datasets import time_art, common, space_us, space_world, headline, space_nyc, historical, drugs
+from feature_datasets import time_art, common, space_us, space_world, headline, space_nyc, historical, drugs, pccs
 
 
 
@@ -19,6 +19,7 @@ ENTITY_PROMPTS = {
 
     # drug
     'drug': drugs.DRUG_PROMPTS,
+    'pcc': pccs.PCC_PROMPTS, 
 }
 
 DATASET_FUNCTIONS = {
@@ -31,6 +32,7 @@ DATASET_FUNCTIONS = {
     'nyc_place': partial(space_nyc.make_nyc_prompt_dataset, entity_col='name'),
 
     'drug': partial(common.make_prompt_dataset, entity_col='drugName'),
+    'pcc': partial(common.make_prompt_dataset, entity_col='Name'),
 }
 
 
