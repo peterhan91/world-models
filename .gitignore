@@ -1,4 +1,5 @@
 data/
+results/
 feature_datasets/
 __pycache__/
 activation_datasets/
