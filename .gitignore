@@ -3,3 +3,5 @@ feature_datasets/
 __pycache__/
 activation_datasets/
 drug_review.ipynb
+.DS_Store
+data/.DS_Store
